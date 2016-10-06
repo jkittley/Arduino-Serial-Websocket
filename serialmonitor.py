@@ -10,13 +10,14 @@ import _thread as thread
 
 
 class SerialMonitor:
-
     socketCon = None
     serialCon = None
-    test = { 'x':0, 'y':0 }
     server_settings = None
 
+    #---------------------------------------------------------------------------
     # Helper functions to colour text output to command line
+    #---------------------------------------------------------------------------
+
     def concat_args(self, *arg):
         s = ""
         for a in arg:
@@ -42,6 +43,10 @@ class SerialMonitor:
         jsonstr = json.dumps(args[0]['data'])
         self.serialCon.write(str.encode(jsonstr))
         print('receive_message')
+
+    #---------------------------------------------------------------------------
+    # Socket listener and Emitter
+    #---------------------------------------------------------------------------
 
     @asyncio.coroutine
     def websocket_listener(self):
@@ -95,7 +100,10 @@ class SerialMonitor:
             return None
 
 
+    #---------------------------------------------------------------------------
     # Detect when script terminated and close socket
+    #---------------------------------------------------------------------------
+
     def signal_handler(self, given_signal):
         if self.serialCon is not None:
             try:
@@ -110,7 +118,10 @@ class SerialMonitor:
         self.infomsg('Exited')
         sys.exit(0)
 
+    #---------------------------------------------------------------------------
     # List all available serial ports
+    #---------------------------------------------------------------------------
+
     def list_serial_ports(self):
         # Find ports
         if sys.platform.startswith('win'):
@@ -171,7 +182,10 @@ class SerialMonitor:
                 self.infomsg("Auto selected: ", port)
                 return port
 
+    #---------------------------------------------------------------------------
     # Test for web server
+    #---------------------------------------------------------------------------
+
     def test_for_webserver(self):
         url = self.server_settings['protocol'] + "://" + self.server_settings['host']+":"+str(self.server_settings['port'])
         self.infomsg('Testing connection to: ', url)
@@ -185,9 +199,10 @@ class SerialMonitor:
         else:
             return False
 
-
-
+    #---------------------------------------------------------------------------
     # Configure web socket
+    #---------------------------------------------------------------------------
+
     def config_websocket(self):
         # Test web server exists
         server_exists = self.test_for_webserver()
@@ -202,8 +217,10 @@ class SerialMonitor:
             time.sleep(CONNECTION_WAIT)
 
 
-
+    #---------------------------------------------------------------------------
     # Configure Serial connection
+    #---------------------------------------------------------------------------
+
     def config_serial(self, autooff):
         # List ports
         ports = self.list_serial_ports()
@@ -224,31 +241,31 @@ class SerialMonitor:
             self.infomsg("waiting for connection")
             time.sleep(CONNECTION_WAIT)
 
+
+    #---------------------------------------------------------------------------
     # Main function called when script executed
+    #---------------------------------------------------------------------------
+
     def __init__(self, autooff, test, servermode):
 
         self.titlemsg(">>>> Serial Port Monitor <<<<")
-        test = int(test)
+        self.server_settings = WEB_SERVER
 
-        self.server_settings = WEB_SERVER[servermode]
-
-        # Config websocket
+        # Config websocket and serial
         self.config_websocket()
-
         self.config_serial(autooff)
 
         # Start
         self.infomsg('Starting...')
 
-        boo_task = asyncio.async(self.websocket_listener())
-        baa_task = asyncio.async(self.websocket_emitter())
+        # Run the listener and emitter asyncronously
+        t1 = asyncio.async(self.websocket_listener())
+        t2 = asyncio.async(self.websocket_emitter())
         loop = asyncio.get_event_loop()
         loop.run_forever()
 
-        return
 
 # -----------------------------------------------------------------------------
-
 
 @click.command()
 @click.option('--autooff', is_flag=True, default=False, help='Turn off auto port selection')
@@ -264,6 +281,5 @@ def main(autooff, test, prod):
 
 if __name__ == '__main__':
     main()
-
 
 # -----------------------------------------------------------------------------

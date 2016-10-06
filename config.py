@@ -1,20 +1,10 @@
 
 # The server address when testing locally
 WEB_SERVER = {
-    "local": {
-        "host": "localhost",
-        "protocol": "http",
-        "port": 8000
-    },
-    "prod": {
-        "host": "0.0.0.0",
-        "protocol": "http",
-        "port": 80
-    }
+    "host": "127.0.0.1",
+    "protocol": "http",
+    "port": 8000
 }
-
-# Flasks secrity key
-SECRET_KEY = 'MY_SECRET_KEY'
 
 # Interval between samples (in milliseconds)
 SAMPLE_INTERVAL = 200
