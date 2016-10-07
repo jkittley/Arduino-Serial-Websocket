@@ -1,7 +1,7 @@
 
 # The server address when testing locally
-WEB_SERVER = {
-    "host": "127.0.0.1",
+DEFAULT_WEB_SERVER = {
+    "host": "localhost",
     "protocol": "http",
     "port": 8000
 }

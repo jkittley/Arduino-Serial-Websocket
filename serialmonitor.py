@@ -105,15 +105,19 @@ class SerialMonitor:
     #---------------------------------------------------------------------------
 
     def signal_handler(self, given_signal):
+
+        self.infomsg('Closing serial connections...')
         if self.serialCon is not None:
             try:
                 self.serialCon.close()
             except serial.serialutil.SerialException:
                 pass
 
-        self.infomsg('Closing connections...')
-        if self.socketCon is not None:
+        self.infomsg('Closing websocket connections...')
+        try:
             self.socketCon.disconnect()
+        except:
+            pass
 
         self.infomsg('Exited')
         sys.exit(0)
@@ -211,7 +215,7 @@ class SerialMonitor:
             sys.exit(0)
         # Connect to web socket
         self.infomsg('Connecting to socket')
-        self.socketCon = SocketIO('localhost', self.server_settings['port'])
+        self.socketCon = SocketIO(self.server_settings['host'], self.server_settings['port'])
         while not self.socketCon.connected:
             self.infomsg("Waiting for connection")
             time.sleep(CONNECTION_WAIT)
@@ -221,15 +225,11 @@ class SerialMonitor:
     # Configure Serial connection
     #---------------------------------------------------------------------------
 
-    def config_serial(self, autooff):
+    def config_serial(self):
         # List ports
         ports = self.list_serial_ports()
         port = None
-
-        # Auto pick a port
-        if not autooff:
-            port = self.auto_port_picket(ports)
-
+        
         # If no port auto picked or auto pick off then manual pick
         if port is None:
             port = self.manual_port_picker(ports)
@@ -246,14 +246,14 @@ class SerialMonitor:
     # Main function called when script executed
     #---------------------------------------------------------------------------
 
-    def __init__(self, autooff, test, servermode):
+    def __init__(self, server_settings):
 
         self.titlemsg(">>>> Serial Port Monitor <<<<")
-        self.server_settings = WEB_SERVER
+        self.server_settings = server_settings
 
         # Config websocket and serial
         self.config_websocket()
-        self.config_serial(autooff)
+        self.config_serial()
 
         # Start
         self.infomsg('Starting...')
@@ -267,16 +267,22 @@ class SerialMonitor:
 
 # -----------------------------------------------------------------------------
 
-@click.command()
-@click.option('--autooff', is_flag=True, default=False, help='Turn off auto port selection')
-@click.option('--test', default=0, help='Generate Test Data')
-@click.option('--prod', is_flag=True, default=False, help='Switch to production mode')
-def main(autooff, test, prod):
-    if not prod:
-        servermode = 'local'
-    else:
-        servermode = 'prod'
-    sm = SerialMonitor(autooff, test, servermode)
+def main():
+
+    host = input('Please enter the websocket host (leave blank for '+DEFAULT_WEB_SERVER['host']+'):')
+    port = input('Please enter the websocket port number (leave blank for '+str(DEFAULT_WEB_SERVER['port'])+'):')
+    if host == "":
+        host = DEFAULT_WEB_SERVER['host']
+    if port == "":
+        port = DEFAULT_WEB_SERVER['port']
+    server_settings = {
+        "host": host,
+        "protocol": "http",
+        "port": port
+    }
+
+
+    sm = SerialMonitor(server_settings)
     signal.signal(signal.SIGINT, sm.signal_handler)
 
 if __name__ == '__main__':
