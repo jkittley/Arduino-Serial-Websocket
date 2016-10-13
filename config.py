@@ -3,7 +3,7 @@
 DEFAULT_WEB_SERVER = {
     "host": "localhost",
     "protocol": "http",
-    "port": 8000
+    "port": 80
 }
 
 # Interval between samples (in milliseconds)
